@@ -29,7 +29,7 @@ public class Server {
                         String msgCliente;
                         while((msgCliente = entrada.readLine()) != null){
 
-                            System.out.println("Mensagem do cliente " + msgCliente);
+                            System.out.println(msgCliente);
                             saida.println("Echo: " + msgCliente);
 
                         }
