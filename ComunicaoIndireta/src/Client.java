@@ -9,19 +9,20 @@ public class Client {
 
     MulticastSocket socket;
 
-    private final String    serverAddr = "127.0.0.1";
-    private final int       serverPort = 5555;
+    private final String    serverAddr = "225.0.0.1";
+    private final int       serverPort = 8888;
 
 
-    public Client(int port) {
+    public Client() {
         try {
-            socket = new MulticastSocket(port);
+            socket = new MulticastSocket(5555);
             InetSocketAddress grupo = new InetSocketAddress(InetAddress.getByName("225.0.0.1"), 5555);
-            NetworkInterface interfaceRede = NetworkInterface.getByName("en0");
+            NetworkInterface interfaceRede = NetworkInterface.getByName("wlp2s0");
             socket.joinGroup(grupo, interfaceRede);
 
 
             new Thread(this::receberDados).start();
+
             new Thread(
                     () -> {
                         Scanner in = new Scanner(System.in);
@@ -50,12 +51,13 @@ public class Client {
     }
 
     private void receberDados() {
+        System.out.println("entrei");
         while (true) {
             DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
             try {
                 socket.receive(dp);
 
-                System.out.println("Recebi: " + new String(dp.getData()));
+                System.out.println("Recebi: " + new String(dp.getData()).trim());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -70,7 +72,7 @@ public class Client {
                     dados,
                     dados.length,
                     InetAddress.getByName(serverAddr),
-                    serverPort);
+                    5555);
 
             socket.send(dp);
             System.out.println("Solicitação enviada.");
@@ -81,17 +83,17 @@ public class Client {
 
     public class Main1{
         public void main(String[] args) {
-            new Client(5555);
+            new Client();
         }
     }
     public class Main2{
         public void main(String[] args) {
-            new Client(5556);
+            new Client();
         }
     }
     public class Main3 {
         public void main(String[] args) {
-            new Client(5557);
+            new Client();
         }
     }
 }
