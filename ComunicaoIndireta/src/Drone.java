@@ -5,6 +5,10 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
+import java.util.Random;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Drone {
     //Precisa de um Socket que envia os dados coletados ao servidor, que ainda nao sei direito como sera implementado.
@@ -25,13 +29,15 @@ public class Drone {
         this.Radiation = radiation;
         this.Temperature = temperature;
         this.Moisture = moisture;
+        Random random = new Random();
+        this.id = random.nextInt()%2;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Main
 
     public static void main(String[] args) {
-        while(true) {
+        ScheduledExecutorService executor = null;
             try (Socket socket =
                          new Socket("localhost", 12345);
                  PrintWriter saida =
@@ -41,26 +47,36 @@ public class Drone {
                  BufferedReader console = new BufferedReader(
                          new InputStreamReader(System.in))) {
 
-                System.out.println("Conectador ao servidor: " +
-                        entrada.readLine());
+//                System.out.println("Conectador ao servidor: " +
+//                        entrada.readLine());
 
-                while (true) {
-                    saida.println(sendMsg());
-                    Thread.sleep(3000);
-                }
+                    executor = Executors.newScheduledThreadPool(1);
+                    Random ran = new Random();
+                    int id = ran.nextInt();
+
+                    executor.scheduleAtFixedRate(
+                            () -> {
+                                saida.println(sendMsg(id));
+                                saida.println("teste\n");
+                            }
+                            , 0, 3, TimeUnit.SECONDS);
+                    //executor.shutdown();
+
+                    //saida.println(sendMsg());
+
+
 
             } catch (IOException e) {
-                e.getMessage();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                e.printStackTrace();
             }
-        }
+
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Coleta de dados
-    private static String sendMsg(){
-        return STR."Pressão Atmosferica: \{calcAtmospherePressure()}\nRadiação: \{calcRadiation()}\nTemperatura: \{calcTemperature()}\nUmidade: \{calcMoisture()}\n";
+    private static String sendMsg(int id){
+        System.out.println("cuzin");
+        return STR."Pressão Atmosferica: \{calcAtmospherePressure()}\nRadiação: \{calcRadiation()}\nTemperatura: \{calcTemperature()}\nUmidade: \{calcMoisture()}\n ID: \{id}\n";
     }
 
     private static double calcTemperature(){
