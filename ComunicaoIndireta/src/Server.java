@@ -16,18 +16,21 @@ public class Server {
 
     private InetAddress clientAddr;
 
+
+    // private list log
+
     public Server(InetAddress addr, InetAddress groupAddr, int port, InetAddress clientAddr) {
         try {
             droneCon = new ServerSocket(12345);
             System.out.println("Servidor rodando na porta: " + droneCon.getLocalPort());
 
-//            group = new MulticastSocket(new InetSocketAddress(addr, port));
-//
-//            InetSocketAddress grupo = new InetSocketAddress(groupAddr, port);
-//            NetworkInterface interfaceRede = NetworkInterface.getByName("en0");
-//            group.joinGroup(grupo, interfaceRede);
+            group = new MulticastSocket(new InetSocketAddress(addr, port));
 
-//            this.clientAddr = clientAddr;
+            InetSocketAddress grupo = new InetSocketAddress(groupAddr, port);
+            NetworkInterface interfaceRede = NetworkInterface.getByName("en0");
+            group.joinGroup(grupo, interfaceRede);
+
+            this.clientAddr = clientAddr;
 
             pool = Executors.newCachedThreadPool();
 
@@ -50,7 +53,7 @@ private void handleDroneConnection() {
                     new InputStreamReader(socketClient.getInputStream()));
 
             // guardar num log
-
+            //log.push(info)
 
             // reenviar diretamente para próximo grupo
             pool.submit(() -> {
@@ -63,7 +66,7 @@ private void handleDroneConnection() {
                                 clientAddr, 12345
                         );
 
-//                        group.send(dp);
+                        group.send(dp);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
