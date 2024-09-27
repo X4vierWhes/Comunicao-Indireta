@@ -9,14 +9,18 @@ public class Client {
 
     MulticastSocket socket;
 
-    private final String    serverAddr = "225.0.0.1";
-    private final int       serverPort = 8888;
+    private String    serverAddr;
+    private int       serverPort;
 
 
-    public Client() {
+    public Client(String serverAddr, int serverPort) {
         try {
+
+            this.serverAddr = serverAddr;
+            this.serverPort = serverPort;
+
             socket = new MulticastSocket(5555);
-            InetSocketAddress grupo = new InetSocketAddress(InetAddress.getByName("225.0.0.1"), 5555);
+            InetSocketAddress grupo = new InetSocketAddress(InetAddress.getByName(serverAddr), 5555);
             NetworkInterface interfaceRede = NetworkInterface.getByName("wlp2s0");
             socket.joinGroup(grupo, interfaceRede);
 
@@ -51,7 +55,6 @@ public class Client {
     }
 
     private void receberDados() {
-        System.out.println("entrei");
         while (true) {
             DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
             try {
@@ -81,19 +84,19 @@ public class Client {
         }
     }
 
-    public class Main1{
-        public void main(String[] args) {
-            new Client();
+    public static class Main1{
+        public static void main(String[] args) {
+            new Client("225.0.0.1", 12345);
         }
     }
-    public class Main2{
-        public void main(String[] args) {
-            new Client();
+    public static class Main2{
+        public static void main(String[] args) {
+            new Client("225.0.0.1", 12345);
         }
     }
-    public class Main3 {
-        public void main(String[] args) {
-            new Client();
+    public static class Main3 {
+        public static void main(String[] args) {
+            new Client("225.0.0.1", 12345);
         }
     }
 }

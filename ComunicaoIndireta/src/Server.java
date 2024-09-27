@@ -9,49 +9,39 @@ public class Server{
 
     private ServerSocket s;
     private DatagramSocket toClient;
-    private BufferedReader in;
+    private int redirectPort;
     private ExecutorService executor;
 
-    public Server(int port){
+    public Server(int DronePort, int redirectPort) {
         try {
-            s = new ServerSocket(port);
-            toClient = new DatagramSocket();
+            s = new ServerSocket(DronePort);
 
-            while(true){
+            this.redirectPort = redirectPort;
+
+            toClient = new DatagramSocket(DronePort);
+
+            executor = Executors.newFixedThreadPool(10);
+
+            executor.submit(() -> { while(true) {
                 Socket client = s.accept();
                 System.out.println("Conexão estabelecida com cliente " + client.getLocalAddress() + ":" + client.getLocalPort());
-                in = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-                executor = Executors.newCachedThreadPool();
-
-                executor.execute(() -> {
+                executor.submit(() -> {
                     try {
-                        String msg;
-                        while ((msg = in.readLine()) != null) {
-                            // formata mensagem
-                            String teste = Arrays.stream(msg.toString().split("\\|")).collect(Collectors.joining("\n"));
-                            teste += "\n";
-                            System.out.println(teste);
-
-
-                            // envia a mensagem para clientes conectados
-                            DatagramPacket dp = new DatagramPacket(
-                                    Arrays.copyOf(msg.toString().getBytes(), 1024), 1024,
-                                    InetAddress.getByName("225.0.0.1"), 5555
-                            );
-
-                            toClient.send(dp);
-
-                        }
-
-
-
+                        handleDroneMessage(new BufferedReader(new InputStreamReader(client.getInputStream())));
 
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });
-            }
+                }
+            });
+
+            DatagramPacket teste = new DatagramPacket(new byte[1024], 1024);
+            toClient.receive(teste);
+            System.out.println("Recebi: " + new String(teste.getData()).trim());
+
+//            executor.submit(this::propagateMessage);
 
 
         } catch (IOException e) {
@@ -59,21 +49,45 @@ public class Server{
         }
     }
 
-    private void recieve(BufferedReader buffer) {
-        try {
+    private void handleDroneMessage(BufferedReader in){
+        while(true) {
+            try {
+                String msg;
+                while ((msg = in.readLine()) != null) {
+                    // formata mensagem
+                    String teste = Arrays.stream(msg.split("\\|")).collect(Collectors.joining("\n"));
+                    teste += "\n";
+                    System.out.println(teste);
 
-            StringBuilder msg = new StringBuilder();
-            while (buffer.ready()){
-                msg.append(buffer.readLine());
-            }
 
-            System.out.println(in.readLine());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                    // envia a mensagem para clientes conectados
+                    DatagramPacket dp = new DatagramPacket(
+                            Arrays.copyOf(msg.getBytes(), 1024), 1024,
+                            InetAddress.getByName("225.0.0.1"), redirectPort
+                    );
+
+                    toClient.send(dp);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            };
         }
     }
 
-    public static void main(String[] args) {
-        new Server(12345);
+    private void propagateMessage(){
+        DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
+        while(true){
+            try{
+                System.out.println("entrei");
+                toClient.receive(dp);
+                System.out.println("Recebi: " + new String(dp.getData()).trim());
+
+                dp.setPort(redirectPort);
+                toClient.send(dp);
+            }
+            catch(IOException e){
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

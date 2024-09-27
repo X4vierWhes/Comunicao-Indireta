@@ -57,7 +57,5 @@ public class Drone{
 
     private double calcMoisture(){return 0.0 + (100.0 - 0.0) * Math.random();}
 
-    public static void main(String[] args) {
-        new Drone(12345);
-    }
+
 }

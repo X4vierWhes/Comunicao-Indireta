@@ -2,37 +2,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 public class MainAberto {
-//    public static class Drone1{
-//        public static void main(String[] args) {
-//            new Drone();
-//        }
-//    }
-
-//    public static class Server1{
-//        public static void main(String[] args) {
-//            try {
-//                new Server(InetAddress.getByName("localhost"), InetAddress.getByName("225.0.0.1"), 12345, InetAddress.getByName("225.0.0.1"), 5555);
-//            } catch (UnknownHostException e) {
-//                throw new RuntimeException(e);
-//            }
-//        }
-//    }
-
-    public static class Client1{
-        public static void main(String[] args) {
-            new Client();
-        }
-    }
-    public static class Client2{
-        public static void main(String[] args) {
-            new Client();
-        }
-    }
-    public static class Client3{
-        public static void main(String[] args) {
-            new Client();
+    public static class mainDrone{
+        public static void main (String[]args){
+           new Drone(12345);
         }
     }
 
-
+    public static class mainServer{
+        public static void main (String[]args){
+            new Server(12345, 5555);
+        }
+    }
 }
