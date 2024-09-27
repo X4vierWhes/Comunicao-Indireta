@@ -10,20 +10,24 @@ import java.util.concurrent.Executors;
 // TODO: enviar dados para endereço de multicast
 
 public class Server {
-    private DatagramSocket droneCon;
+    private ServerSocket droneCon;
     private MulticastSocket group;
     private ExecutorService pool;
 
     private InetAddress clientAddr;
 
-    public Server(InetAddress addr, InetAddress groupAddr, int port) {
+    public Server(InetAddress addr, InetAddress groupAddr, int port, InetAddress clientAddr) {
         try {
-            droneCon = new DatagramSocket(port);
+            droneCon = new ServerSocket(12345);
+            System.out.println("Servidor rodando na porta: " + droneCon.getLocalPort());
 
-            group = new MulticastSocket(port);
-            InetSocketAddress grupo = new InetSocketAddress(groupAddr, port);
-            NetworkInterface interfaceRede = NetworkInterface.getByName("en0");
-            group.joinGroup(grupo, interfaceRede);
+//            group = new MulticastSocket(new InetSocketAddress(addr, port));
+//
+//            InetSocketAddress grupo = new InetSocketAddress(groupAddr, port);
+//            NetworkInterface interfaceRede = NetworkInterface.getByName("en0");
+//            group.joinGroup(grupo, interfaceRede);
+
+//            this.clientAddr = clientAddr;
 
             pool = Executors.newCachedThreadPool();
 
@@ -35,31 +39,54 @@ public class Server {
     }
 
 private void handleDroneConnection() {
-    DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
 
     while (true) {
         try {
-            droneCon.receive(dp);
+            Socket socketClient = droneCon.accept();
+            System.out.println("Cliente conectado "
+                    + droneCon.getInetAddress());
+
+            BufferedReader entrada = new BufferedReader(
+                    new InputStreamReader(socketClient.getInputStream()));
 
             // guardar num log
 
+
             // reenviar diretamente para próximo grupo
             pool.submit(() -> {
-                try {
-                    dp.setAddress(clientAddr);
-                    group.send(dp);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                while (socketClient.isConnected()) {
+                    try {
+                        String msg = entrada.readLine();
+                        System.out.println(msg);
+                        DatagramPacket dp = new DatagramPacket(
+                                msg.getBytes(), 1024,
+                                clientAddr, 12345
+                        );
+
+//                        group.send(dp);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             });
-            System.out.println("Recebi: " + new String(dp.getData()));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 }
 
+    public static class cu{
+        public static void main(String[] args) {
+            try {
+                new Server(InetAddress.getByName("localhost"), InetAddress.getByName("227.0.0.1"), 12345, InetAddress.getByName("localhost"));
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public static void main(String[] args) {
+
         ExecutorService pool = Executors.newFixedThreadPool(10);
 
         try(ServerSocket socketServidor = new ServerSocket(12345)){
@@ -69,9 +96,11 @@ private void handleDroneConnection() {
                 Socket socketClient = socketServidor.accept();
                 System.out.println("Cliente conectado "
                         + socketServidor.getInetAddress());
+
                 pool.execute(() -> {
                     try(BufferedReader entrada = new BufferedReader(
                             new InputStreamReader(socketClient.getInputStream()));
+
                         PrintWriter saida =
                                 new PrintWriter(socketClient.getOutputStream(), true)) {
 
