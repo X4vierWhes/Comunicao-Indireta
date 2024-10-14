@@ -16,7 +16,7 @@ public class Drone{
     public Drone(int port) {
         try {
 
-            s = new Socket(InetAddress.getByName("localhost"), port);
+            s = new Socket(InetAddress.getByName("26.87.217.249"), port);
 
             out = new BufferedWriter(new PrintWriter(s.getOutputStream()));
 

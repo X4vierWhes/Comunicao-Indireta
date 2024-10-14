@@ -63,7 +63,7 @@ public class Server{
                     // envia a mensagem para clientes conectados
                     DatagramPacket dp = new DatagramPacket(
                             Arrays.copyOf(msg.getBytes(), 1024), 1024,
-                            InetAddress.getByName("225.0.0.1"), redirectPort
+                            InetAddress.getByName("26.87.217.249"), redirectPort
                     );
 
                     toClient.send(dp);
