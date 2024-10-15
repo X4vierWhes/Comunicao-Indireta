@@ -1,3 +1,5 @@
+package src;
+
 import java.io.*;
 import java.net.*;
 import java.util.Arrays;
@@ -22,7 +24,8 @@ public class Server{
 
             executor = Executors.newFixedThreadPool(10);
 
-            executor.submit(() -> { while(true) {
+            executor.submit(() -> {
+                while(true) {
                 Socket client = s.accept();
                 System.out.println("Conexão estabelecida com cliente " + client.getLocalAddress() + ":" + client.getLocalPort());
 

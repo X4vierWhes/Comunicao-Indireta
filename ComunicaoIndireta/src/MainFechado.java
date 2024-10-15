@@ -1,3 +1,5 @@
+package src;
+
 public class MainFechado {
 
     public static class mainDroneNorte{

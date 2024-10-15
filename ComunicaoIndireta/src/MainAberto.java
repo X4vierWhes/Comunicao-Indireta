@@ -1,5 +1,4 @@
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+package src;
 
 public class MainAberto {
     public static class mainDrone{
