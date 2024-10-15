@@ -54,7 +54,8 @@ public class Server{
         }
     }
 
-    private void handleDroneMessage(BufferedReader in){
+    private void handleDroneMessage(BufferedReader in) throws IOException {
+        rabbitSocket = new Socket("localhost", 654321);
         while(true) {
             try {
                 String msg;

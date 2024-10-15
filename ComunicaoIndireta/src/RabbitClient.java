@@ -9,7 +9,7 @@ public class RabbitClient {
         Scanner cin = new Scanner(System.in);
         while(!escolha.equals("S")){
 
-            System.out.println("Digite R para solicitar RADIAÇÃO" + "\n"
+            System.out.print("Digite R para solicitar RADIAÇÃO" + "\n"
                     + "Digite T para solicitar TEMPERATURA" + "\n"
                     + "Digite S para SAIR.\n"
                     + "Escolha: ");

@@ -6,6 +6,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
@@ -14,20 +15,37 @@ public class RabbitSender {
     private static ServerSocket s;
     private final static String FILA = "drone";
 
-    public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         s = new ServerSocket(654321);
+        while(true) {
 
-        final ConnectionFactory connectionFactory = new ConnectionFactory();
-        connectionFactory.setHost("localhost");
+            Socket client = s.accept();
 
-        try(final Connection connection = connectionFactory.newConnection();
-            final Channel channel = connection.createChannel()
-        ){
-            channel.queueDeclare(FILA, false, false, false, null);
-            sendMsg(channel);
+            new Thread( () -> {
+                try {
+                    connect(client);
+                } catch (IOException | TimeoutException e) {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+
         }
 
 
+    }
+
+    public static void connect(Socket client) throws IOException, TimeoutException {
+        final ConnectionFactory connectionFactory = new ConnectionFactory();
+        connectionFactory.setHost("localhost");
+
+        try (final Connection connection = connectionFactory.newConnection();
+             final Channel channel = connection.createChannel()
+        ) {
+            channel.queueDeclare(FILA, false, false, false, null);
+            sendMsg(channel);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static void sendMsg(Channel c) throws IOException, InterruptedException {
