@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 public class Server{
 
     private ServerSocket s;
+
+    private Socket rabbitSocket;
     private DatagramSocket toClient;
     private int redirectPort;
     private ExecutorService executor;
