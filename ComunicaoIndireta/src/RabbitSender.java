@@ -4,7 +4,9 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -14,48 +16,44 @@ public class RabbitSender {
 
     private static ServerSocket s;
     private final static String FILA = "drone";
+    private final static String FilaAtmosferica = "FilaAtmosferica";
+    private final static String FilaRadiacao = "FilaRadiacao";
+    private final static String FilaTemperatura = "FilaTemperatura";
+    private final static String FilaUmidade = "FilaUmidade";
 
-    public static void main(String[] args) throws IOException {
-        s = new ServerSocket(654321);
-        while(true) {
+    private static ConnectionFactory connectionFactory;
 
-            Socket client = s.accept();
+    private static Connection connection;
 
-            new Thread( () -> {
-                try {
-                    connect(client);
-                } catch (IOException | TimeoutException e) {
-                    throw new RuntimeException(e);
-                }
-            }).start();
+    private static Channel channel;
 
-        }
-
+    public RabbitSender(){
 
     }
 
-    public static void connect(Socket client) throws IOException, TimeoutException {
-        final ConnectionFactory connectionFactory = new ConnectionFactory();
+    public  void connect() throws IOException, TimeoutException {
+        connectionFactory = new ConnectionFactory();
         connectionFactory.setHost("localhost");
 
-        try (final Connection connection = connectionFactory.newConnection();
-             final Channel channel = connection.createChannel()
-        ) {
-            channel.queueDeclare(FILA, false, false, false, null);
-            sendMsg(channel);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        connection = connectionFactory.newConnection();
+        channel = connection.createChannel();
+        channel.queueDeclare(FILA, false,false,false, null);
+        channel.queueDeclare(FilaAtmosferica, false,false,false, null);
+        channel.queueDeclare(FilaRadiacao, false,false,false, null);
+        channel.queueDeclare(FilaTemperatura, false,false,false, null);
+        channel.queueDeclare(FilaUmidade, false,false,false, null);
     }
 
-    public static void sendMsg(Channel c) throws IOException, InterruptedException {
-        String mensagem;
+    public  void sendMsg(String msg) throws IOException, InterruptedException {
+        //System.out.println(msg);
+        channel.basicPublish("", FILA, null, msg.getBytes(StandardCharsets.UTF_8));
 
-        for (int i = 1; i <= 15; i++) {
-            mensagem = "Faça algo (" + i + ")";
-            System.out.println(" [x] Enviando essa mensagem para a fila: " + mensagem);
-            c.basicPublish("", FILA, null, mensagem.getBytes(StandardCharsets.UTF_8));
-            Thread.sleep(1000);
+        String[] dados = msg.split("\\|");
+        String[] filas = {FilaAtmosferica, FilaRadiacao, FilaTemperatura, FilaUmidade};
+        for(int i = 0; i < 4; i++){
+            channel.basicPublish("", filas[i], null, dados[i].getBytes(StandardCharsets.UTF_8));
         }
+        //System.out.println(dados[0]);
+
     }
 }

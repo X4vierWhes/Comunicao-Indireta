@@ -5,19 +5,21 @@ import java.net.*;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 public class Server{
 
+    private RabbitSender rabbitSender;
     private ServerSocket s;
-
-    private Socket rabbitSocket;
     private DatagramSocket toClient;
     private int redirectPort;
     private ExecutorService executor;
 
     public Server(int DronePort, int redirectPort) {
         try {
+            rabbitSender = new RabbitSender();
+            rabbitSender.connect();
             s = new ServerSocket(DronePort);
 
             this.redirectPort = redirectPort;
@@ -51,11 +53,13 @@ public class Server{
 
         } catch (IOException e) {
             throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
         }
     }
 
     private void handleDroneMessage(BufferedReader in) throws IOException {
-        rabbitSocket = new Socket("localhost", 654321);
+
         while(true) {
             try {
                 String msg;
@@ -72,28 +76,16 @@ public class Server{
                             InetAddress.getByName("26.87.217.249"), redirectPort
                     );
 
+
                     toClient.send(dp);
+                    rabbitSender.sendMsg(msg);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            };
-        }
-    }
-
-    private void propagateMessage(){
-        DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
-        while(true){
-            try{
-                System.out.println("entrei");
-                toClient.receive(dp);
-                System.out.println("Recebi: " + new String(dp.getData()).trim());
-
-                dp.setPort(redirectPort);
-                toClient.send(dp);
-            }
-            catch(IOException e){
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+            ;
         }
     }
 }
