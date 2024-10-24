@@ -44,6 +44,8 @@ public class RabbitSender {
         if (port != 15672)
             connectionFactory.setPort(port);
 
+        System.out.println("Conectando ao RabbitMQ em " + host + ":" + port);
+
         connection = connectionFactory.newConnection();
         channel = connection.createChannel();
 

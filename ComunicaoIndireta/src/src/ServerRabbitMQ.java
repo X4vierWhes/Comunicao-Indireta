@@ -12,13 +12,15 @@ public class ServerRabbitMQ extends ServerBase {
     private RabbitSender rabbitSender;
     private MulticastSocket multicastSocket;
 
-    private String host;
-    private int port;
+    private String host = "localhost";
+    private int port = 15672;
+    private String exchange;
 
-    public ServerRabbitMQ(InetSocketAddress myAddr, String host, int port) {
+    public ServerRabbitMQ(InetSocketAddress myAddr, String host, int port, String exchange) {
         super(myAddr);
         this.host = host;
         this.port = port;
+        this.exchange = exchange;
     }
 
     @Override
@@ -29,6 +31,7 @@ public class ServerRabbitMQ extends ServerBase {
             NetworkInterface interfaceRede = NetworkInterface.getByName("wlp2s0");
             multicastSocket.joinGroup(myAddr, interfaceRede);
 
+            // o host e a porta deveriam ser dinamicos mas nao sei oq acontece que eles ficam como valores vazios aq...
             rabbitSender = new RabbitSender("localhost", 15672, "server");
             rabbitSender.connect();
 

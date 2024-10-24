@@ -23,7 +23,8 @@ public class MainRabbitMQ {
             new ServerRabbitMQ(
                     new InetSocketAddress("225.0.0.1", 12345),
                     "localhost",
-                    15672
+                    15672,
+                    "server1"
                     );
         }
     }
@@ -33,15 +34,10 @@ public class MainRabbitMQ {
             new ServerRabbitMQ(
                     new InetSocketAddress("225.0.0.1", 12345),
                     "localhost",
-                    15672
+                    15672,
+                    "server2"
             );
         }
     }
 
-
-    public static class Client{
-        public static void main(String[] args) {
-            new RabbitClient();
-        }
-    }
 }
