@@ -1,91 +1,58 @@
 package src;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.*;
-import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 
-public class Server{
+public class Server extends ServerBase{
 
-    private RabbitSender rabbitSender;
-    private ServerSocket s;
-    private DatagramSocket toClient;
-    private int redirectPort;
-    private ExecutorService executor;
+    InetSocketAddress nextAddr;
 
-    public Server(int DronePort, int redirectPort) {
+    private MulticastSocket multicastSocket;
+
+    public Server(InetSocketAddress myAddr, InetSocketAddress nextAddr) {
+        super(myAddr);
+        this.nextAddr = nextAddr;
+    }
+
+    @Override
+    protected void init() {
         try {
-            rabbitSender = new RabbitSender();
-            rabbitSender.connect();
-            s = new ServerSocket(DronePort);
-
-            this.redirectPort = redirectPort;
-
-            toClient = new DatagramSocket(DronePort);
-
-            executor = Executors.newFixedThreadPool(10);
-
-            executor.submit(() -> {
-                while(true) {
-                Socket client = s.accept();
-                System.out.println("Conexão estabelecida com cliente " + client.getLocalAddress() + ":" + client.getLocalPort());
-
-                executor.submit(() -> {
-                    try {
-                        handleDroneMessage(new BufferedReader(new InputStreamReader(client.getInputStream())));
-
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-                }
-            });
-
-            DatagramPacket teste = new DatagramPacket(new byte[1024], 1024);
-            toClient.receive(teste);
-            System.out.println("Recebi: " + new String(teste.getData()).trim());
-
-//            executor.submit(this::propagateMessage);
-
+            multicastSocket = new MulticastSocket(myAddr.getPort());
+            NetworkInterface interfaceRede = NetworkInterface.getByName("wlp2s0");
+            multicastSocket.joinGroup(myAddr, interfaceRede);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (TimeoutException e) {
-            throw new RuntimeException(e);
         }
+
     }
 
-    private void handleDroneMessage(BufferedReader in) throws IOException {
+    @Override
+    protected void handleMessage() throws Exception {
 
-        while(true) {
-            try {
-                String msg;
-                while ((msg = in.readLine()) != null) {
-                    // formata mensagem
-                    String teste = Arrays.stream(msg.split("\\|")).collect(Collectors.joining("\n"));
-                    teste += "\n";
-                    System.out.println(teste);
+        DatagramPacket dp = new DatagramPacket(new byte[1024], 1024);
 
+        try {
+            multicastSocket.receive(dp);
+            ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(dp.getData()));
+            DroneInfo info = (DroneInfo) inputStream.readObject();
 
-                    // envia a mensagem para clientes conectados
-                    DatagramPacket dp = new DatagramPacket(
-                            Arrays.copyOf(msg.getBytes(), 1024), 1024,
-                            InetAddress.getByName("26.87.217.249"), redirectPort
-                    );
+            System.out.println("Recebido: " + info);
 
+            dp = new DatagramPacket(dp.getData(), dp.getLength(), nextAddr.getAddress(), nextAddr.getPort());
+            multicastSocket.send(dp);
 
-                    toClient.send(dp);
-                    rabbitSender.sendMsg(msg);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            ;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+
+    }
+
+    public static void main(String[] args) {
+        InetSocketAddress myAddr = new InetSocketAddress("225.0.0.1", 12345);
+        InetSocketAddress nextAddr = new InetSocketAddress("225.0.0.1", 54321);
+        new Server(myAddr, nextAddr);
     }
 }

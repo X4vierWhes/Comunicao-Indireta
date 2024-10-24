@@ -2,9 +2,13 @@ package src;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.time.LocalDateTime;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -12,28 +16,28 @@ import java.util.concurrent.TimeUnit;
 public class Drone{
 
     private Socket s;
-    private BufferedWriter out;
+    private ObjectOutputStream out;
     private ScheduledExecutorService executor;
 
-    public Drone(int port) {
+    public Drone(InetSocketAddress addr, int id) {
         try {
 
-            s = new Socket(InetAddress.getByName("26.238.50.67"), port);
+            s = new Socket(InetAddress.getByName("localhost"), addr.getPort());
 
-            out = new BufferedWriter(new PrintWriter(s.getOutputStream()));
+            out = new ObjectOutputStream(s.getOutputStream());
 
             executor = Executors.newScheduledThreadPool(1);
 
             executor.scheduleWithFixedDelay(() -> {
                         try {
-                            out.write(sendMsg(1));
+                            out.writeObject(sendMsg(id));
                             out.flush();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
                     },
                     0,
-                    3,
+                    5,
                     TimeUnit.SECONDS
             );
 
@@ -43,10 +47,11 @@ public class Drone{
         }
     }
 
-    private String sendMsg(int id){
-        System.out.println("enviando mensagem");
-        return String.format("Pressão Atmosferica: %.2f|Radiação: %.2f|Temperatura: %.2f|Umidade: %.2f|ID: %d\n",
-            calcAtmospherePressure(), calcRadiation(), calcTemperature(), calcMoisture(), id);
+    private DroneInfo sendMsg(int id){
+        DroneInfo info = new DroneInfo(calcAtmospherePressure(), calcRadiation(), calcTemperature(), calcMoisture(), LocalDateTime.now(), id);
+        System.out.print("enviando mensagem ");
+        System.out.println(info);
+        return info;
     }
 
     private static double calcTemperature(){
@@ -59,5 +64,8 @@ public class Drone{
 
     private double calcMoisture(){return 0.0 + (100.0 - 0.0) * Math.random();}
 
+    public static void main(String[] args) {
+        new Drone(new InetSocketAddress("localhost", 8080), new Random().nextInt(Integer.MAX_VALUE));
+    }
 
 }
